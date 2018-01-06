@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 
@@ -15,7 +16,35 @@
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
+StaticJsonBuffer<255> jsonBuffer;
+
+
 #define USE_SERIAL Serial
+
+void onEvent(uint8_t * payload) {
+      JsonObject& jsonObj = jsonBuffer.parseObject(payload);
+
+      // Test if parsing succeeds.
+      if (!jsonObj.success()) {
+        USE_SERIAL.println("parseObject() failed");
+      }
+      else {
+        const char* event = jsonObj["event"];
+        USE_SERIAL.print("Event: ");
+        USE_SERIAL.println(event);
+        if (strcmp(event, "my-event") == 0) {
+          const char* data = jsonObj["data"];
+          USE_SERIAL.print("Data: ");
+          USE_SERIAL.println(data);
+
+          JsonObject& dataObj = jsonBuffer.parseObject(data);
+          const char* name = dataObj["name"];
+          USE_SERIAL.print("name: ");
+          USE_SERIAL.println(name);
+        }
+      }
+  
+}
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
@@ -45,10 +74,12 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 		}
 			break;
 		case WStype_TEXT:
-			USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+			USE_SERIAL.printf("[WSc] got text: %s\n", payload);
 
-			// send message to server
-			// webSocket.sendTXT("message here");
+      onEvent(payload);
+
+
+
 			break;
 		case WStype_BIN:
 			USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
@@ -62,6 +93,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 }
 
 void setup() {
+
+  
+  
 	// USE_SERIAL.begin(921600);
 	USE_SERIAL.begin(115200);
 
