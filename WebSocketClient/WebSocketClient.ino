@@ -16,33 +16,36 @@
 ESP8266WiFiMulti WiFiMulti;
 WebSocketsClient webSocket;
 
-StaticJsonBuffer<255> jsonBuffer;
+
 
 
 #define USE_SERIAL Serial
 
 void onEvent(uint8_t * payload) {
-      JsonObject& jsonObj = jsonBuffer.parseObject(payload);
+  StaticJsonBuffer<255> jsonBuffer;
 
-      // Test if parsing succeeds.
-      if (!jsonObj.success()) {
-        USE_SERIAL.println("parseObject() failed");
-      }
-      else {
-        const char* event = jsonObj["event"];
-        USE_SERIAL.print("Event: ");
-        USE_SERIAL.println(event);
-        if (strcmp(event, "my-event") == 0) {
-          const char* data = jsonObj["data"];
-          USE_SERIAL.print("Data: ");
-          USE_SERIAL.println(data);
+  JsonObject& jsonObj = jsonBuffer.parseObject(payload);
 
-          JsonObject& dataObj = jsonBuffer.parseObject(data);
-          const char* name = dataObj["name"];
-          USE_SERIAL.print("name: ");
-          USE_SERIAL.println(name);
-        }
-      }
+  // Test if parsing succeeds.
+  if (!jsonObj.success()) {
+    USE_SERIAL.println("parseObject() failed");
+  }
+  else {
+    const char* event = jsonObj["event"];
+    USE_SERIAL.print("Event: ");
+    USE_SERIAL.println(event);
+    if (strcmp(event, "my-event") == 0) {
+      const char* data = jsonObj["data"];
+      USE_SERIAL.print("Data: ");
+      USE_SERIAL.println(data);
+
+      StaticJsonBuffer<255> jsonBuffer;
+      JsonObject& dataObj = jsonBuffer.parseObject(data);
+      const char* name = dataObj["name"];
+      USE_SERIAL.print("name: ");
+      USE_SERIAL.println(name);
+    }
+  }
   
 }
 
