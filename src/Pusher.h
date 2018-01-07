@@ -3,17 +3,25 @@
 #ifndef PUSHER_H_
 #define PUSHER_H_
 
+#include <Arduino.h>
+#include <WebSockets.h>
+#include <WebSocketsClient.h>
+
 class Pusher {
 
     public:
-        Pusher(void);
-        bool connect(String app_key);
+        Pusher();
+       // bool connect(String app_key);
         bool connect(String app_key, String cluster);
+        bool connect(String app_key, String cluster, const char *host, const char *path);
+        void loop(void);
         void subscribe(String channel);
         
+       static void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
+        
     private:
-        WSclient_t _client;
-        void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
+        WebSocketsClient _client;
+        
         
 };
 
