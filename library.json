@@ -1,0 +1,29 @@
+{
+    "name": "Pusher",
+    "description": "Pusher client for pusher.com",
+    "keywords": "pusher, wifi, http, web, client, websocket",
+    "authors": [
+        {
+            "name": "Peter Clarke",
+            "url": "https://github.com/theapi",
+            "maintainer": true
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/theapi/pusher_arduino"
+    },
+    "version": "0.0.1",
+    "license": "GPL-3",
+    "export": {
+        "exclude": [
+            "tests"
+        ]
+    },
+    "frameworks": "arduino",
+    "platforms": "*",
+    "examples": [
+        "examples/*/*.ino"
+    ]
+}
+
