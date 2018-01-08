@@ -20,15 +20,15 @@ WebSocketsClient webSocket;
 Pusher pusher;
 
 
-#define JSON_BUUFFER_SIZE 255
+#define JSON_BUFFER_SIZE 1024
 
 void onPusherConnectionEstablished(const char* data) {
-  StaticJsonBuffer<JSON_BUUFFER_SIZE> jsonBuffer;
+  StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
   JsonObject& jsonObj = jsonBuffer.parseObject(data);
 
   if (jsonObj.success()) {
     const char* activity_timeout = jsonObj["activity_timeout"];
-    webSocket.setReconnectInterval(atoi(activity_timeout));
+    webSocket.setReconnectInterval(atoi(activity_timeout) * 1000);
 
     // Subscribe to the initial channel.
     String json = pusher.subscribeJsonString("my-channel");
@@ -37,7 +37,7 @@ void onPusherConnectionEstablished(const char* data) {
 }
 
 void onMyEvent(const char* data) {
-  StaticJsonBuffer<JSON_BUUFFER_SIZE> jsonBuffer;
+  StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
   JsonObject& jsonObj = jsonBuffer.parseObject(data);
 
   if (jsonObj.success()) {
@@ -49,7 +49,7 @@ void onMyEvent(const char* data) {
 void handlePusherEvent(uint8_t * payload) {
 
   // Create the temporary buffer for parsing the json.
-  StaticJsonBuffer<JSON_BUUFFER_SIZE> jsonBuffer;
+  StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
   // Parse the json string.
   JsonObject& jsonObj = jsonBuffer.parseObject(payload);
   if (!jsonObj.success()) {
