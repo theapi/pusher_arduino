@@ -9,7 +9,7 @@ class Pusher {
 
     public:
         Pusher();
-        String subscribeJson(char * channel);
+        String subscribeJsonString(char * channel);
         
         
 };

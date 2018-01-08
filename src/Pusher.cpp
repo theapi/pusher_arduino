@@ -4,7 +4,7 @@
 Pusher::Pusher() { 
 }
 
-String Pusher::subscribeJson(char * channel) {
+String Pusher::subscribeJsonString(char * channel) {
 	String json = "{\"event\":\"pusher:subscribe\",\"data\": {\"channel\": \"_C_\"}}";
 
 	json.replace(String("_C_"), String(channel));

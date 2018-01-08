@@ -20,116 +20,86 @@ WebSocketsClient webSocket;
 Pusher pusher;
 
 
+#define JSON_BUUFFER_SIZE 255
 
+void onPusherConnectionEstablished(const char* data) {
+  StaticJsonBuffer<JSON_BUUFFER_SIZE> jsonBuffer;
+  JsonObject& jsonObj = jsonBuffer.parseObject(data);
 
-#define USE_SERIAL Serial
+  if (jsonObj.success()) {
+    const char* activity_timeout = jsonObj["activity_timeout"];
+    webSocket.setReconnectInterval(atoi(activity_timeout));
 
-void onEvent(uint8_t * payload) {
-  StaticJsonBuffer<255> jsonBuffer;
-
-  JsonObject& jsonObj = jsonBuffer.parseObject(payload);
-
-  // Test if parsing succeeds.
-  if (!jsonObj.success()) {
-    USE_SERIAL.println("parseObject() failed");
+    // Subscribe to the initial channel.
+    String json = pusher.subscribeJsonString("my-channel");
+    webSocket.sendTXT(json);
   }
-  else {
-    const char* event = jsonObj["event"];
-    USE_SERIAL.print("Event: ");
-    USE_SERIAL.println(event);
-    if (strcmp(event, "my-event") == 0) {
-      const char* data = jsonObj["data"];
-      USE_SERIAL.print("Data: ");
-      USE_SERIAL.println(data);
+}
 
-      StaticJsonBuffer<255> jsonBuffer;
-      JsonObject& dataObj = jsonBuffer.parseObject(data);
-      const char* name = dataObj["name"];
-      USE_SERIAL.print("name: ");
-      USE_SERIAL.println(name);
-    }
+void onMyEvent(const char* data) {
+  StaticJsonBuffer<JSON_BUUFFER_SIZE> jsonBuffer;
+  JsonObject& jsonObj = jsonBuffer.parseObject(data);
+
+  if (jsonObj.success()) {
+    const char* name = jsonObj["name"];
+    Serial.print("name: "); Serial.println(name);
+  }
+}
+
+void handlePusherEvent(uint8_t * payload) {
+
+  // Create the temporary buffer for parsing the json.
+  StaticJsonBuffer<JSON_BUUFFER_SIZE> jsonBuffer;
+  // Parse the json string.
+  JsonObject& jsonObj = jsonBuffer.parseObject(payload);
+  if (!jsonObj.success()) {
+    return; 
   }
   
+  // Get the pusher event name.
+  const char* event = jsonObj["event"];
+  const char* data = jsonObj["data"];
+  Serial.print("Event: "); Serial.println(event);
+
+  // Event subscribers (poor man's event dispatcher).
+  if (strcmp(event, "pusher:connection_established") == 0) {
+    onPusherConnectionEstablished(data);
+  }
+  else if (strcmp(event, "my-event") == 0) {
+    onMyEvent(data);
+  }
+    
 }
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
-
   switch(type) {
     case WStype_DISCONNECTED:
-      USE_SERIAL.printf("[WSc] Disconnected!\n");
+      Serial.printf("[WSc] Disconnected!\n");
       break;
-    case WStype_CONNECTED: {
-      USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
-
-      // Subscribe to a channel
-     /*
-      * 
-{
-  "event": "pusher:subscribe",
-  "data": {
-    "channel": String,
-    "auth": String,
-    "channel_data": String
-  }
-}
-      */
-
-      //webSocket.sendTXT("{\"event\":\"pusher:subscribe\",\"data\": {\"channel\": \"my-channel\"}}");
-       String json = pusher.subscribeJson("my-channel");
-       Serial.print("SUB: ");
-       Serial.println(json);
-       webSocket.sendTXT(json);
-    }
+    case WStype_CONNECTED:
+      Serial.printf("[WSc] Connected to url: %s\n", payload); 
       break;
     case WStype_TEXT:
-      USE_SERIAL.printf("[WSc] got text: %s\n", payload);
-
-      onEvent(payload);
-
-
-
-      break;
-    case WStype_BIN:
-      USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
-      //hexdump(payload, length);
-
-      // send data to server
-      // webSocket.sendBIN(payload, length);
+      Serial.printf("[WSc] got text: %s\n", payload);
+      handlePusherEvent(payload);
       break;
   }
-
 }
 
 void setup() {
+  Serial.begin(115200);
 
-  
-  
-  // USE_SERIAL.begin(921600);
-  USE_SERIAL.begin(115200);
+  Serial.setDebugOutput(true);
 
-  //Serial.setDebugOutput(true);
-  USE_SERIAL.setDebugOutput(true);
-
-  USE_SERIAL.println();
-  USE_SERIAL.println();
-  USE_SERIAL.println();
-
-//  for(uint8_t t = 4; t > 0; t--) {
-//    USE_SERIAL.printf("[SETUP] BOOT WAIT %d...\n", t);
-//    USE_SERIAL.flush();
-//    delay(1000);
-//  }
+  Serial.println();
 
   WiFiMulti.addAP(WIFI_SID, WIFI_PASWORD);
-
-  //WiFi.disconnect();
   while(WiFiMulti.run() != WL_CONNECTED) {
-    USE_SERIAL.print(".");
+    Serial.print(".");
     delay(200);
   }
 
   // server address, port and URL
-  //webSocket.begin("192.168.0.34", 81, "/");
   webSocket.begin(PUSHER_HOST, 80, PUSHER_PATH);
 
   // event handler
